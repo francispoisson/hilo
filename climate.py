@@ -34,7 +34,7 @@ from homeassistant.const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-SCAN_INTERVAL = timedelta(seconds=60)
+SCAN_INTERVAL = timedelta(seconds=200)
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     h = hass.data[DOMAIN]
