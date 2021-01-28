@@ -29,6 +29,8 @@ class PowerSensor(Entity):
         self._d = d
         
         self._h = h
+        
+        self._should_poll = True
 
     @property
     def name(self):
