@@ -1,4 +1,4 @@
-# hilo
+# Hilo
 Hilo integration for Home Assistant
 
 # What This Is:
@@ -14,7 +14,7 @@ This is a custom component to allow control of Hilo devices.
 - Add functionnalities for other devices
 
 # How To Setup:
-Copy the custom_components/hilo directory from the latest release to your customer_components directory.
+Copy the hilo directory from the latest release to your customer_components directory.
 
 After copying all files from the hilo directory, your configuration should look like:
 ```
