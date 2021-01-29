@@ -34,29 +34,30 @@ from homeassistant.const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-SCAN_INTERVAL = timedelta(seconds=200)
+#SCAN_INTERVAL = timedelta(seconds=60)
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
-    h = hass.data[DOMAIN]
     
-    for i in range(len(h.d)):
-        if(h.d[i].deviceType == 'Thermostat'):
-            add_entities([HiloClimateEntity(h, h.d[i],i)])
+    registry = hass.data[DOMAIN]
+    
+    for i in range(len(registry.d)):
+        if(registry.d[i].deviceType == 'Thermostat'):
+            add_entities([HiloClimateEntity(registry, i)])
 
     # Return boolean to indicate that initialization was successfully.
     return True
     
 class HiloClimateEntity(ClimateEntity):
 
-    def __init__(self, h, d, index):
+    def __init__(self, h, index):
         """Init climate device."""
         #_LOGGER.warning( "%s", d.name)
         self.index = index
-        self.entity_id = ENTITY_ID_FORMAT.format(d.deviceId)
+        self.entity_id = ENTITY_ID_FORMAT.format(h.d[index].deviceId)
         self.operations = [HVAC_MODE_HEAT, HVAC_MODE_OFF]
-        self._name = d.name
+        self._name = h.d[index].name
         self._has_operation = False
-        if d.Heating == 0:
+        if h.d[index].Heating == 0:
             self._def_hvac_mode = HVAC_MODE_OFF
         else:
             self._def_hvac_mode = HVAC_MODE_HEAT
@@ -66,14 +67,12 @@ class HiloClimateEntity(ClimateEntity):
         self._temp_entity_error = False
         self._should_poll = True
         
-        self._d = d
-        
         self._h = h
 
     @property
     def name(self):
         """Return the precision of the system."""
-        return self._d.name
+        return self._h.d[self.index].name
 
     @property
     def precision(self):
@@ -87,13 +86,13 @@ class HiloClimateEntity(ClimateEntity):
     @property
     def current_temperature(self):
         """Return the current temperature."""
-        curr_temp = self._d.CurrentTemperature
+        curr_temp = self._h.d[self.index].CurrentTemperature
         return curr_temp
 
     @property
     def target_temperature(self):
         """Return the temperature we try to reach."""
-        return self._d.TargetTemperature
+        return self._h.d[self.index].TargetTemperature
         
     def set_hvac_mode(self, hvac_mode):
         """Set operation mode."""
@@ -101,7 +100,7 @@ class HiloClimateEntity(ClimateEntity):
         
     @property
     def hvac_mode(self):
-        if self._d.Heating == 0:
+        if self._h.d[self.index].Heating == 0:
             return HVAC_MODE_OFF
         else:
             return HVAC_MODE_HEAT
@@ -119,15 +118,14 @@ class HiloClimateEntity(ClimateEntity):
         """Set new target temperature."""
         if ATTR_TEMPERATURE in kwargs:
             self._h.set_attribute('TargetTemperature', kwargs[ATTR_TEMPERATURE], self.index)
-            self._d.TargetTemperature = kwargs[ATTR_TEMPERATURE]
+            self._h.d[self.index].TargetTemperature = kwargs[ATTR_TEMPERATURE]
             
     def update(self):
-        self._h.update_device(self.index)
-        self._d = self._h.d[self.index] 
+        self._h.update()
         
-        if self._d.Heating == 0:
+        if self._h.d[self.index].Heating == 0:
             self._def_hvac_mode = HVAC_MODE_OFF
         else:
             self._def_hvac_mode = HVAC_MODE_HEAT
-        self._target_temperature = self._d.TargetTemperature
-        self._current_temperature = self._d.CurrentTemperature        
+        self._target_temperature = self._h.d[self.index].TargetTemperature
+        self._current_temperature = self._h.d[self.index].CurrentTemperature        
