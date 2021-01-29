@@ -1,4 +1,6 @@
-import requests, time, json, datetime
+import requests, time, json, datetime, logging
+
+_LOGGER = logging.getLogger(__name__)
 
 class Hilo():
     __username = None
@@ -7,6 +9,7 @@ class Hilo():
     __location_id = None
 
     access_token_expiration = None
+    update_expiration = None
     d = {}
 
     class Device():
@@ -107,6 +110,7 @@ class Hilo():
             print(e)
         else:
             self.access_token_expiration = time.time() + 3500
+            self.update_expiration = time.time() + 60
 
             try:
                 self.__location_id = self.get_location_id()
@@ -139,17 +143,20 @@ class Hilo():
             # optional: raise exception for status code
             req.raise_for_status()
         except Exception as e:
-            print(e)
+            #print(e)
+            _LOGGER.warning( "Error refreshing Token")
             return None
         else:
             # assuming the response's structure is
             # {"access_token": ""}
             return req.json()['access_token']
-
-
+            _LOGGER.warning( "Token refreshed")
+            
     def refreshToken(self):
             if time.time() > self.access_token_expiration:
-                self.getAccessToken()
+                _LOGGER.warning( "Refreshing Token")
+                self.access_token_expiration = time.time()+3500
+                self.__access_token = self.getAccessToken()
             return True
 
     def get_location_id(self):
@@ -196,26 +203,30 @@ class Hilo():
         return
 
     def update(self):
-        self.refreshToken()
-        suppAttrLowCase = {}
-
-        try:
-            self.__location_id = self.get_location_id()
-            if self.__location_id is None:
-                raise Exception("Request for location_id failed.")
-        except Exception as e:
-            print(e)
-        else:
-            self.get_devices()
-            for i in range(len(self.d)): 
-                suppAttr = self.d[i].supportedAttributes.split(", ")
-                if suppAttr[0] != "None":
-                    self.get_device_attributes(i)
-                    for x in range(len(suppAttr)):
-                        s = "self.d[" + str(i) + "]." + suppAttr[x]
-                        suppAttrLowCase[x] =  suppAttr[x][:1].lower() + suppAttr[x][1:]
-                        s2 = 'self.d['+ str(i) + "].AttributeRaw['" + suppAttrLowCase[x] + "']['value']"
-                        exec("%s = %s" % (s, s2))
+        if time.time() > self.update_expiration:
+            self.update_expiration = time.time() + 60
+            _LOGGER.warning( "update")
+            self.refreshToken()
+            suppAttrLowCase = {}
+    
+            try:
+                self.__location_id = self.get_location_id()
+                if self.__location_id is None:
+                    raise Exception("Request for location_id failed.")
+            except Exception as e:
+                print(e)
+            else:
+                self.get_devices()
+                for i in range(len(self.d)): 
+                    suppAttr = self.d[i].supportedAttributes.split(", ")
+                    if suppAttr[0] != "None":
+                        self.get_device_attributes(i)
+                        for x in range(len(suppAttr)):
+                            s = "self.d[" + str(i) + "]." + suppAttr[x]
+                            suppAttrLowCase[x] =  suppAttr[x][:1].lower() + suppAttr[x][1:]
+                            s2 = 'self.d['+ str(i) + "].AttributeRaw['" + suppAttrLowCase[x] + "']['value']"
+                            exec("%s = %s" % (s, s2))
+                            
         return
 
     def update_device(self, index):
