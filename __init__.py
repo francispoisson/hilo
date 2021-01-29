@@ -26,9 +26,7 @@ def setup(hass, config):
     username = config[DOMAIN].get(CONF_USERNAME, "no username")
     password = config[DOMAIN].get(CONF_PASSWORD, "no password")
 
-    h = Hilo(username, password)
-    
-    hass.data[DOMAIN] = h
+    hass.data[DOMAIN] = Hilo(username, password)
 
     hass.helpers.discovery.load_platform('climate', DOMAIN, {}, config)
     hass.helpers.discovery.load_platform('sensor', DOMAIN, {}, config)
