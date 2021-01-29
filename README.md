@@ -8,9 +8,9 @@ This is a custom component to allow control of Hilo devices.
 - Get current temperature of thermostat
 - Update target temperature of thermostat
 - Get power of energy meter
+- Get power of each devices
 
 # To Do:
-- Get power of each devices
 - Add functionnalities for other devices
 
 # How To Setup:
