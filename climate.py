@@ -53,7 +53,7 @@ class HiloClimateEntity(ClimateEntity):
         """Init climate device."""
         #_LOGGER.warning( "%s", d.name)
         self.index = index
-        self.entity_id = ENTITY_ID_FORMAT.format(h.d[index].deviceId)
+        #self.entity_id = ENTITY_ID_FORMAT.format(h.d[index].deviceId)
         self.operations = [HVAC_MODE_HEAT, HVAC_MODE_OFF]
         self._name = h.d[index].name
         self._has_operation = False
