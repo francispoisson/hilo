@@ -21,7 +21,7 @@ class PowerSensor(Entity):
 
     def __init__(self, h, index):
         self.index = index
-        self.entity_id = ENTITY_ID_FORMAT.format(h.d[index].deviceId)
+        #self.entity_id = ENTITY_ID_FORMAT.format(h.d[index].deviceId)
         self._name = h.d[index].name
         
         self._h = h
