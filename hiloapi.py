@@ -1,15 +1,13 @@
-import requests, time, json, datetime, logging
-
-_LOGGER = logging.getLogger(__name__)
+import requests, time, json, datetime
 
 class Hilo():
     __username = None
     __password = None
     __access_token = None
     __location_id = None
+    is_event = None
 
     access_token_expiration = None
-    update_expiration = None
     d = {}
 
     class Device():
@@ -110,7 +108,6 @@ class Hilo():
             print(e)
         else:
             self.access_token_expiration = time.time() + 3500
-            self.update_expiration = time.time() + 60
 
             try:
                 self.__location_id = self.get_location_id()
@@ -143,21 +140,20 @@ class Hilo():
             # optional: raise exception for status code
             req.raise_for_status()
         except Exception as e:
-            #print(e)
-            _LOGGER.warning( "Error refreshing Token")
+            print(e)
             return None
         else:
             # assuming the response's structure is
             # {"access_token": ""}
             return req.json()['access_token']
-            _LOGGER.warning( "Token refreshed")
-            
+
+
     def refreshToken(self):
             if time.time() > self.access_token_expiration:
-                _LOGGER.warning( "Refreshing Token")
                 self.access_token_expiration = time.time()+3500
                 self.__access_token = self.getAccessToken()
             return True
+
 
     def get_location_id(self):
         self.refreshToken()
@@ -173,6 +169,40 @@ class Hilo():
         else:
             return req_dictionnary[0]['id']
 
+    def get_events(self):
+        self.refreshToken()
+        url_get_events = 'https://apim.hiloenergie.com/Automation/v1/api/Drms/Locations/' + str(self.__location_id) + '/Events'
+        headers = {'Ocp-Apim-Subscription-Key': '20eeaedcb86945afa3fe792cea89b8bf', 
+            'authorization' : 'Bearer ' + self.__access_token}
+
+        req = requests.get(url_get_events, headers=headers)
+        req_dictionnary = req.json()
+
+        event = {}
+
+        now = datetime.datetime.utcnow() - datetime.timedelta(hours=5)
+
+        for i in range(len(req_dictionnary)):
+            start_time = datetime.datetime.strptime(req_dictionnary[i]['startTimeUTC'], "%Y-%m-%dT%H:%M:%SZ") - datetime.timedelta(hours=5)
+            end_time = datetime.datetime.strptime(req_dictionnary[i]['endTimeUTC'], "%Y-%m-%dT%H:%M:%SZ") - datetime.timedelta(hours=5)
+
+            if((start_time.day == now.day) & (now.hour >= start_time.hour) & (now.hour < (end_time.hour))):
+                event[i] = True
+            else:
+                event[i] = False
+
+        test = 0
+
+        for i in range(len(event)):
+            if(event[i] == True):
+              test = test+1
+
+        if test == 0:
+            self.is_event = False
+        else:
+            self.is_event = True
+        return
+
     def get_devices(self):
         self.refreshToken()
         url_get_device = 'https://apim.hiloenergie.com/Automation/v1/api/Locations/' + str(self.__location_id) + '/Devices'
@@ -181,6 +211,8 @@ class Hilo():
 
         req = requests.get(url_get_device, headers=headers)
         req_dictionnary = req.json()
+
+       # print(req_dictionnary)
 
         for i in range(len(req_dictionnary)):
             self.d[i] = self.Device(req_dictionnary[i]['name'], req_dictionnary[i]['identifier'], req_dictionnary[i]['type'], req_dictionnary[i]['supportedAttributes'], req_dictionnary[i]['settableAttributes'], req_dictionnary[i]['id'], req_dictionnary[i]['category'])
@@ -196,37 +228,35 @@ class Hilo():
 
         req = requests.get(url_get_device_attr, headers=headers)
 
-        #print(req.text)
+       #print(req.text)
+
         
         self.d[index].AttributeRaw = req.json()
 
         return
 
     def update(self):
-        if time.time() > self.update_expiration:
-            self.update_expiration = time.time() + 60
-            _LOGGER.warning( "update")
-            self.refreshToken()
-            suppAttrLowCase = {}
-    
-            try:
-                self.__location_id = self.get_location_id()
-                if self.__location_id is None:
-                    raise Exception("Request for location_id failed.")
-            except Exception as e:
-                print(e)
-            else:
-                self.get_devices()
-                for i in range(len(self.d)): 
-                    suppAttr = self.d[i].supportedAttributes.split(", ")
-                    if suppAttr[0] != "None":
-                        self.get_device_attributes(i)
-                        for x in range(len(suppAttr)):
-                            s = "self.d[" + str(i) + "]." + suppAttr[x]
-                            suppAttrLowCase[x] =  suppAttr[x][:1].lower() + suppAttr[x][1:]
-                            s2 = 'self.d['+ str(i) + "].AttributeRaw['" + suppAttrLowCase[x] + "']['value']"
-                            exec("%s = %s" % (s, s2))
-                            
+        self.refreshToken()
+        suppAttrLowCase = {}
+        self.get_events()
+
+        try:
+            self.__location_id = self.get_location_id()
+            if self.__location_id is None:
+                raise Exception("Request for location_id failed.")
+        except Exception as e:
+            print(e)
+        else:
+            self.get_devices()
+            for i in range(len(self.d)): 
+                suppAttr = self.d[i].supportedAttributes.split(", ")
+                if suppAttr[0] != "None":
+                    self.get_device_attributes(i)
+                    for x in range(len(suppAttr)):
+                        s = "self.d[" + str(i) + "]." + suppAttr[x]
+                        suppAttrLowCase[x] =  suppAttr[x][:1].lower() + suppAttr[x][1:]
+                        s2 = 'self.d['+ str(i) + "].AttributeRaw['" + suppAttrLowCase[x] + "']['value']"
+                        exec("%s = %s" % (s, s2))
         return
 
     def update_device(self, index):

@@ -121,7 +121,7 @@ class HiloClimateEntity(ClimateEntity):
             self._h.d[self.index].TargetTemperature = kwargs[ATTR_TEMPERATURE]
             
     def update(self):
-        self._h.update()
+        #self._h.update()
         
         if self._h.d[self.index].Heating == 0:
             self._def_hvac_mode = HVAC_MODE_OFF
