@@ -127,9 +127,9 @@ class Hilo():
                             s = "self.d[" + str(i) + "]." + suppAttr[x]
                             suppAttrLowCase[x] =  suppAttr[x][:1].lower() + suppAttr[x][1:]
                             s2 = 'self.d['+ str(i) + "].AttributeRaw['" + suppAttrLowCase[x] + "']['value']"
-                            exec("test = %s" % (s2))
+                            #exec("test = %s" % (s2))
                             #_LOGGER.warning(s2)
-                            print(test)
+                            #print(test)
                             exec("%s = %s" % (s, s2))
 
     def getAccessToken(self):
