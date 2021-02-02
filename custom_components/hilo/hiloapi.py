@@ -1,4 +1,6 @@
-import requests, time, json, datetime
+import requests, time, json, datetime, logging
+
+_LOGGER = logging.getLogger(__name__)
 
 class Hilo():
     __username = None
@@ -105,7 +107,7 @@ class Hilo():
             if self.__access_token is None:
                 raise Exception("Request for access token failed.")
         except Exception as e:
-            print(e)
+            _LOGGER.warning(e)
         else:
             self.access_token_expiration = time.time() + 3500
 
@@ -114,7 +116,7 @@ class Hilo():
                 if self.__location_id is None:
                     raise Exception("Request for location_id failed.")
             except Exception as e:
-                print(e)
+                _LOGGER.warning(e)
             else:
                 self.get_devices()
                 for i in range(len(self.d)): 
