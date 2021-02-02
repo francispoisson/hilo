@@ -130,7 +130,7 @@ class Hilo():
                             #_LOGGER.warning(s2)
                             try:
                                 exec("%s = %s" % (s, s2))
-                            except KeyError
+                            except KeyError:
                                 _LOGGER.warning("KeyError")
 
     def getAccessToken(self):
@@ -264,7 +264,7 @@ class Hilo():
                         s2 = 'self.d['+ str(i) + "].AttributeRaw['" + suppAttrLowCase[x] + "']['value']"
                         try:
                             exec("%s = %s" % (s, s2))
-                        except KeyError
+                        except KeyError:
                             _LOGGER.warning("KeyError")
         return
 
@@ -280,7 +280,7 @@ class Hilo():
             s2 = 'self.d['+ str(index) + "].AttributeRaw['" + suppAttrLowCase[x] + "']['value']"
             try:
                 exec("%s = %s" % (s, s2))
-            except KeyError
+            except KeyError:
                 _LOGGER.warning("KeyError")
         return
 
