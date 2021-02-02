@@ -1,0 +1,12 @@
+{
+    "name": "Hilo HA integration",
+    "hacs": "0.2.1",
+    "domains": [
+        "binary_sensor",
+        "sensor",
+        "switch"
+        "climate"
+    ],
+    "iot_class": "Cloud Polling",
+    "homeassistant": "2021.1.5"
+}
