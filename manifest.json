@@ -1,8 +1,0 @@
-{
-  "domain": "hilo",
-  "name": "Hilo HA integration",
-  "documentation": "https://github.com/francispoisson/hilo",
-  "dependencies": [],
-  "codeowners": ["@francispoisson"],
-  "requirements": []
-}
