@@ -1,6 +1,6 @@
 {
     "name": "Hilo HA integration",
-    "hacs": "0.2.1",
+    "hacs": "0.1.1",
     "domains": [
         "binary_sensor",
         "sensor",
