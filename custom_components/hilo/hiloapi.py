@@ -127,6 +127,9 @@ class Hilo():
                             s = "self.d[" + str(i) + "]." + suppAttr[x]
                             suppAttrLowCase[x] =  suppAttr[x][:1].lower() + suppAttr[x][1:]
                             s2 = 'self.d['+ str(i) + "].AttributeRaw['" + suppAttrLowCase[x] + "']['value']"
+                            exec("test = %s" % (s2))
+                            #_LOGGER.warning(s2)
+                            print(test)
                             exec("%s = %s" % (s, s2))
 
     def getAccessToken(self):
@@ -135,7 +138,7 @@ class Hilo():
         try:
             url = 'https://hilodirectoryb2c.b2clogin.com/hilodirectoryb2c.onmicrosoft.com/oauth2/v2.0/token?p=B2C_1A_B2C_1_PasswordFlow'
             headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-            body = 'grant_type=password&scope=openid 9870f087-25f8-43b6-9cad-d4b74ce512e1 offline_access&client_id=9870f087-25f8-43b6-9cad-d4b74ce512e1&response_type=token id_token&username=' + self.__username + '&password=' + self.__password
+            body = "grant_type=password&scope=openid 9870f087-25f8-43b6-9cad-d4b74ce512e1 offline_access&client_id=9870f087-25f8-43b6-9cad-d4b74ce512e1&response_type=token id_token&username=" + self.__username + "&password=" + self.__password
 
             req = requests.post(url, headers=headers, data=body)
 
