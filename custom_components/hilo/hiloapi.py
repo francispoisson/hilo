@@ -1,4 +1,4 @@
-import requests, time, json, datetime, logging
+import requests, time, json, datetime, logging, urllib
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ class Hilo():
         # the function that is executed when
         # an instance of the class is created
         self.__username = username
-        self.__password = password
+        self.__password = urllib.parse.quote(password, safe='')
         suppAttrLowCase = {}
 
         try:
@@ -131,7 +131,7 @@ class Hilo():
                             try:
                                 exec("%s = %s" % (s, s2))
                             except KeyError:
-                                _LOGGER.warning("KeyError")
+                                exec("%s = 0" % (s))
 
     def getAccessToken(self):
         # the function that is 
@@ -265,7 +265,7 @@ class Hilo():
                         try:
                             exec("%s = %s" % (s, s2))
                         except KeyError:
-                            _LOGGER.warning("KeyError")
+                            exec("%s = 0" % (s))
         return
 
     def update_device(self, index):
@@ -281,7 +281,7 @@ class Hilo():
             try:
                 exec("%s = %s" % (s, s2))
             except KeyError:
-                _LOGGER.warning("KeyError")
+                exec("%s = 0" % (s))
         return
 
     def set_attribute(self, key, value, index):
