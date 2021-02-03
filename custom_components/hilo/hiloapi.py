@@ -1,4 +1,6 @@
-import requests, time, json, datetime
+import requests, time, json, datetime, logging, urllib
+
+_LOGGER = logging.getLogger(__name__)
 
 class Hilo():
     __username = None
@@ -97,7 +99,7 @@ class Hilo():
         # the function that is executed when
         # an instance of the class is created
         self.__username = username
-        self.__password = password
+        self.__password = urllib.parse.quote(password, safe='')
         suppAttrLowCase = {}
 
         try:
@@ -105,7 +107,7 @@ class Hilo():
             if self.__access_token is None:
                 raise Exception("Request for access token failed.")
         except Exception as e:
-            print(e)
+            _LOGGER.warning(e)
         else:
             self.access_token_expiration = time.time() + 3500
 
@@ -114,7 +116,7 @@ class Hilo():
                 if self.__location_id is None:
                     raise Exception("Request for location_id failed.")
             except Exception as e:
-                print(e)
+                _LOGGER.warning(e)
             else:
                 self.get_devices()
                 for i in range(len(self.d)): 
@@ -125,7 +127,11 @@ class Hilo():
                             s = "self.d[" + str(i) + "]." + suppAttr[x]
                             suppAttrLowCase[x] =  suppAttr[x][:1].lower() + suppAttr[x][1:]
                             s2 = 'self.d['+ str(i) + "].AttributeRaw['" + suppAttrLowCase[x] + "']['value']"
-                            exec("%s = %s" % (s, s2))
+                            #_LOGGER.warning(s2)
+                            try:
+                                exec("%s = %s" % (s, s2))
+                            except KeyError:
+                                exec("%s = 0" % (s))
 
     def getAccessToken(self):
         # the function that is 
@@ -133,7 +139,7 @@ class Hilo():
         try:
             url = 'https://hilodirectoryb2c.b2clogin.com/hilodirectoryb2c.onmicrosoft.com/oauth2/v2.0/token?p=B2C_1A_B2C_1_PasswordFlow'
             headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-            body = 'grant_type=password&scope=openid 9870f087-25f8-43b6-9cad-d4b74ce512e1 offline_access&client_id=9870f087-25f8-43b6-9cad-d4b74ce512e1&response_type=token id_token&username=' + self.__username + '&password=' + self.__password
+            body = "grant_type=password&scope=openid 9870f087-25f8-43b6-9cad-d4b74ce512e1 offline_access&client_id=9870f087-25f8-43b6-9cad-d4b74ce512e1&response_type=token id_token&username=" + self.__username + "&password=" + self.__password
 
             req = requests.post(url, headers=headers, data=body)
 
@@ -256,7 +262,10 @@ class Hilo():
                         s = "self.d[" + str(i) + "]." + suppAttr[x]
                         suppAttrLowCase[x] =  suppAttr[x][:1].lower() + suppAttr[x][1:]
                         s2 = 'self.d['+ str(i) + "].AttributeRaw['" + suppAttrLowCase[x] + "']['value']"
-                        exec("%s = %s" % (s, s2))
+                        try:
+                            exec("%s = %s" % (s, s2))
+                        except KeyError:
+                            exec("%s = 0" % (s))
         return
 
     def update_device(self, index):
@@ -269,7 +278,10 @@ class Hilo():
             s = "self.d[" + str(index) + "]." + suppAttr[x]
             suppAttrLowCase[x] =  suppAttr[x][:1].lower() + suppAttr[x][1:]
             s2 = 'self.d['+ str(index) + "].AttributeRaw['" + suppAttrLowCase[x] + "']['value']"
-            exec("%s = %s" % (s, s2))
+            try:
+                exec("%s = %s" % (s, s2))
+            except KeyError:
+                exec("%s = 0" % (s))
         return
 
     def set_attribute(self, key, value, index):
