@@ -51,5 +51,5 @@ class HiloSwitch(ToggleEntity):
 
         if(self._h.d[self.index].OnOff == 'True'):
             self._state = True
-        else:
+        if(self._h.d[self.index].OnOff == 'False'):
             self._state = False
