@@ -36,7 +36,9 @@ class PowerSensor(Entity):
     @property
     def state(self):
         """Return the state of the sensor."""
-        return self._h.d[self.index].Power
+        power_int = int(self._h.d[self.index].Power)
+        round_power = round(power_int)
+        return str(round_power)
     
     @property    
     def device_class(self):
@@ -50,5 +52,6 @@ class PowerSensor(Entity):
 
     def update(self):
         #self._h.update()
-
-        self._state  = self._h.d[self.index].Power
+        power_int = int(self._h.d[self.index].Power)
+        round_power = round(power_int)
+        self._state  = str(round_power)
