@@ -10,7 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 
 from . import DOMAIN
 
-#SCAN_IMTERVAL = timedelta(seconds=60)
+SCAN_IMTERVAL = timedelta(seconds=15)
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     for i in range(len(hass.data[DOMAIN].d)):
