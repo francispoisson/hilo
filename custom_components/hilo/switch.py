@@ -34,10 +34,7 @@ class HiloSwitch(ToggleEntity):
 
     @property
     def is_on(self):
-        if(self._h.d[self.index].OnOff == 'True'):
-            return True
-        if(self._h.d[self.index].OnOff == 'False'):
-            return False
+        return self._state
         
  
     @property
@@ -55,10 +52,9 @@ class HiloSwitch(ToggleEntity):
         self._state = False
 
     def update(self):
-        return
         #self._h.update()
 
-        #if(self._h.d[self.index].OnOff == 'True'):
-        #    self._state = True
-        #if(self._h.d[self.index].OnOff == 'False'):
-        #    self._state = False
+        if(self._h.d[self.index].OnOff == 'True'):
+            self._state = True
+        if(self._h.d[self.index].OnOff == 'False'):
+            self._state = False
