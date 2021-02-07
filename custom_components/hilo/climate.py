@@ -135,7 +135,7 @@ class HiloClimateEntity(ClimateEntity):
         else:
             self._target_temperature = self._h.d[self.index].TargetTemperature
 
-        if self._h.d[self.index].CurrentTemperature is None
+        if self._h.d[self.index].CurrentTemperature is None:
             self._current_temperature = self._current_temperature   
         else:
             self._current_temperature = self._h.d[self.index].CurrentTemperature    
