@@ -39,7 +39,7 @@ class HiloEvent(BinarySensorEntity):
     @property
     def is_on(self):
         """Return the state of the sensor."""
-        return self._h.is_event
+        return self._state
 
     @property
     def should_poll(self) -> bool:        
@@ -52,11 +52,11 @@ class HiloEvent(BinarySensorEntity):
 
     def update(self):
         self._h.update()
-        return
+        #return
         #_LOGGER.warning( "binary")
         #if(self._h.is_event == True):
             #_LOGGER.warning( "True")
         #else:
             #_LOGGER.warning( "False")
 
-        #self._is_on = self._h.is_event
+        self._state = self._h.is_event
