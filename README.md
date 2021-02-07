@@ -1,3 +1,5 @@
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
+
 # Hilo
 Hilo integration for Home Assistant
 
@@ -16,7 +18,7 @@ This is a custom component to allow control of Hilo devices from Home Assistant.
 - Add functionnalities for other devices
 
 # How To Setup:
-Copy the hilo directory from the latest release to your customer_components directory.
+Copy the custom_components/hilo directory from the latest release to your customer_components directory.
 
 After copying all files from the hilo directory, your configuration should look like:
 ```
