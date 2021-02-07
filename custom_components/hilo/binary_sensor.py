@@ -52,10 +52,11 @@ class HiloEvent(BinarySensorEntity):
 
     def update(self):
         self._h.update()
+        return
         #_LOGGER.warning( "binary")
         #if(self._h.is_event == True):
             #_LOGGER.warning( "True")
         #else:
             #_LOGGER.warning( "False")
 
-        self._is_on = self._h.is_event
+        #self._is_on = self._h.is_event

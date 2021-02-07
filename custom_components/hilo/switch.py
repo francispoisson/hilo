@@ -34,7 +34,11 @@ class HiloSwitch(ToggleEntity):
 
     @property
     def is_on(self):
-        return self._h.d[self.index].OnOff
+        if(self._h.d[self.index].OnOff == 'True'):
+            return True
+        if(self._h.d[self.index].OnOff == 'False'):
+            return False
+        
  
     @property
     def should_poll(self) -> bool:        
@@ -51,9 +55,10 @@ class HiloSwitch(ToggleEntity):
         self._state = False
 
     def update(self):
+        return
         #self._h.update()
 
-        if(self._h.d[self.index].OnOff == 'True'):
-            self._state = True
-        if(self._h.d[self.index].OnOff == 'False'):
-            self._state = False
+        #if(self._h.d[self.index].OnOff == 'True'):
+        #    self._state = True
+        #if(self._h.d[self.index].OnOff == 'False'):
+        #    self._state = False
