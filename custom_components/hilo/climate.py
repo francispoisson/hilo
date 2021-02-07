@@ -124,6 +124,7 @@ class HiloClimateEntity(ClimateEntity):
             self._h.d[self.index].TargetTemperature = kwargs[ATTR_TEMPERATURE]
             
     def update(self):
+        return
         #self._h.update()
         
         #if self._h.d[self.index].Heating == 0:
