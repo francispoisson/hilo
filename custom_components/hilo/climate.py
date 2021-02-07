@@ -89,9 +89,8 @@ class HiloClimateEntity(ClimateEntity):
 
     @property
     def current_temperature(self):
-        """Return the current temperature."""
-        curr_temp = self._h.d[self.index].CurrentTemperature
-        return curr_temp
+        """Return the current temperature.""" 
+        return self._h.d[self.index].CurrentTemperature
 
     @property
     def target_temperature(self):
@@ -131,5 +130,12 @@ class HiloClimateEntity(ClimateEntity):
             self._def_hvac_mode = HVAC_MODE_OFF
         else:
             self._def_hvac_mode = HVAC_MODE_HEAT
-        self._target_temperature = self._h.d[self.index].TargetTemperature
-        self._current_temperature = self._h.d[self.index].CurrentTemperature        
+        if self._h.d[self.index].TargetTemperature is None:
+            self._target_temperature = self._target_temperature
+        else:
+            self._target_temperature = self._h.d[self.index].TargetTemperature
+
+        if self._h.d[self.index].CurrentTemperature is None
+            self._current_temperature = self._current_temperature   
+        else:
+            self._current_temperature = self._h.d[self.index].CurrentTemperature     
