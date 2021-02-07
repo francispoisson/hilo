@@ -34,9 +34,16 @@ class PowerSensor(Entity):
         return self._h.d[self.index].name
 
     @property
+    def should_poll(self) -> bool:        
+        return True
+
+    @property
     def state(self):
         """Return the state of the sensor."""
-        return self._h.d[self.index].Power
+        if self._h.d[self.index].Power is None:
+            return '0'
+        else:
+            return self._h.d[self.index].Power
     
     @property    
     def device_class(self):
@@ -51,4 +58,7 @@ class PowerSensor(Entity):
     def update(self):
         #self._h.update()
 
-        self._state  = self._h.d[self.index].Power
+        if self._h.d[self.index].Power is None:
+            self._state  = '0'
+        else:
+            self._state  = self._h.d[self.index].Power
