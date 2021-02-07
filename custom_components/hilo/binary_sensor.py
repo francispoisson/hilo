@@ -24,6 +24,7 @@ class HiloEvent(BinarySensorEntity):
     def __init__(self, h, index):
         self.index = index
         self._name = 'Défi Hilo'
+        self._state = None
         
         self._h = h
         
@@ -60,3 +61,4 @@ class HiloEvent(BinarySensorEntity):
             #_LOGGER.warning( "False")
 
         self._state = self._h.is_event
+        return self._state

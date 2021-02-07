@@ -60,9 +60,10 @@ class PowerSensor(Entity):
     def update(self):
         return
         #self._h.update()
-        #if self._h.d[self.index].Power is None:
-        #    self._state  = '0'
-        #else:
-        #    power_int = int(self._h.d[self.index].Power)
-        #    round_power = round(power_int)
-        #    self._state  = str(round_power)
+        if self._h.d[self.index].Power is None:
+            self._state  = '0'
+        else:
+            power_int = int(self._h.d[self.index].Power)
+            round_power = round(power_int)
+            self._state  = str(round_power)
+        return self._state
