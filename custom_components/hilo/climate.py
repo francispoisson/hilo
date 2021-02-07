@@ -75,6 +75,10 @@ class HiloClimateEntity(ClimateEntity):
         return self._h.d[self.index].name
 
     @property
+    def should_poll(self) -> bool:        
+        return True
+        
+    @property
     def precision(self):
         """Return the precision of the system."""
         return PRECISION_TENTHS

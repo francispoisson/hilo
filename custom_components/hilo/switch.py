@@ -35,7 +35,11 @@ class HiloSwitch(ToggleEntity):
     @property
     def is_on(self):
         return self._h.d[self.index].OnOff
-    
+ 
+    @property
+    def should_poll(self) -> bool:        
+        return True
+
     def turn_on(self, **kwargs):
         self._h.set_attribute('OnOff', 'True', self.index)
         self._h.d[self.index].OnOff = True

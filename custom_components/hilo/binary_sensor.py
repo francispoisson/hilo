@@ -40,6 +40,10 @@ class HiloEvent(BinarySensorEntity):
     def is_on(self):
         """Return the state of the sensor."""
         return self._h.is_event
+
+    @property
+    def should_poll(self) -> bool:        
+        return True
     
     @property    
     def device_class(self):
