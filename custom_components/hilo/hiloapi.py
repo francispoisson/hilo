@@ -131,7 +131,7 @@ class Hilo():
                             try:
                                 exec("%s = %s" % (s, s2))
                             except KeyError:
-                                exec("%s = '0'" % (s))
+                                exec("%s = None" % (s))
 
     def getAccessToken(self):
         # the function that is 
@@ -266,7 +266,7 @@ class Hilo():
                             exec("%s = %s" % (s, s2))
                         except KeyError:
                             #return
-                            exec("%s = '0'" % (s))
+                            exec("%s = None" % (s))
         return
 
     def update_device(self, index):
@@ -282,7 +282,7 @@ class Hilo():
             try:
                 exec("%s = %s" % (s, s2))
             except KeyError:
-                exec("%s = '0'" % (s))
+                exec("%s = None" % (s))
                 #return
         return
 
