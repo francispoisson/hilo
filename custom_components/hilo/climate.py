@@ -34,7 +34,7 @@ from homeassistant.const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-#SCAN_INTERVAL = timedelta(seconds=60)
+SCAN_INTERVAL = timedelta(seconds=60)
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     
@@ -138,4 +138,6 @@ class HiloClimateEntity(ClimateEntity):
         if self._h.d[self.index].CurrentTemperature is None
             self._current_temperature = self._current_temperature   
         else:
-            self._current_temperature = self._h.d[self.index].CurrentTemperature     
+            self._current_temperature = self._h.d[self.index].CurrentTemperature    
+
+        _LOGGER.warning( "%s", self._target_temperature) 
