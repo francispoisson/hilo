@@ -13,7 +13,7 @@ SCAN_IMTERVAL = timedelta(seconds=15)
 def setup_platform(hass, config, add_entities, discovery_info=None):
     for i in range(len(hass.data[DOMAIN].d)):
         if(hass.data[DOMAIN].d[i].deviceType == 'LightDimmer'):
-            add_entities([HiloSwitch(hass.data[DOMAIN], i)])
+            add_entities([HiloDimmer(hass.data[DOMAIN], i)])
 
 class HiloDimmer(LightEntity):
     def __init__(self, h, index):
