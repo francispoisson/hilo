@@ -56,7 +56,7 @@ class HiloDimmer(LightEntity):
         return supports
 
     def turn_on(self, **kwargs):
-        self._h.set_attribute('Intensity', kwargs.get(attr_brightness, 255)/255*100, self.index)
+        self._h.set_attribute('Intensity', kwargs.get(ATTR_BRIGHTNESS, 255)/255*100, self.index)
         self._h.set_attribute('OnOff', 'True', self.index)
         self._h.d[self.index].OnOff = True
         self._state = True
