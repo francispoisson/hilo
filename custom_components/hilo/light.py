@@ -41,6 +41,8 @@ class HiloDimmer(LightEntity):
         This method is optional. Removing it indicates to Home Assistant
         that brightness is not supported for this light.
         """
+        self._brightness = self._h.d[self.index].Intensity
+
         return self._brightness        
  
     @property
