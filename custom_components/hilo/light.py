@@ -1,4 +1,4 @@
-from homeassistant.components.light import (ATTR_BRIGHTNESS, PLATFORM_SCHEMA, LightEntity)
+from homeassistant.components.light import (ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS, PLATFORM_SCHEMA, LightEntity)
 
 from datetime import timedelta
 
@@ -48,6 +48,12 @@ class HiloDimmer(LightEntity):
     @property
     def should_poll(self) -> bool:        
         return True
+
+    @property
+    def supported_features(self):
+        """Flag supported features."""
+        supports = SUPPORT_BRIGHTNESS
+        return supports
 
     def turn_on(self, **kwargs):
         self._h.set_attribute('Intensity', kwargs.get(ATTR_BRIGHTNESS, 255), self.index)
