@@ -15,13 +15,15 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         if(hass.data[DOMAIN].d[i].deviceType == 'LightDimmer'):
             add_entities([HiloDimmer(hass.data[DOMAIN], i)])
 
+    return True
+
 class HiloDimmer(LightEntity):
     def __init__(self, h, index):
         self.index = index
         #self.entity_id = ENTITY_ID_FORMAT.format('switch_' + str(h.d[index].deviceId))
         self._name = h.d[index].name
-        self._state = None
-        self._brightness = None
+        self._state = h.d[index].OnOff
+        self._brightness = h.d[index].Intensity*255
         
         self._h = h
         
@@ -41,8 +43,6 @@ class HiloDimmer(LightEntity):
         This method is optional. Removing it indicates to Home Assistant
         that brightness is not supported for this light.
         """
-        self._brightness = self._h.d[self.index].Intensity/100*255
-
         return self._brightness        
  
     @property
@@ -56,7 +56,9 @@ class HiloDimmer(LightEntity):
         return supports
 
     def turn_on(self, **kwargs):
-        self._h.set_attribute('Intensity', kwargs.get(ATTR_BRIGHTNESS, 255)/255*100, self.index)
+        if ATTR_BRIGHTNESS in kwargs:
+            self._h.set_attribute('Intensity', kwargs[ATTR_BRIGHTNESS]/255, self.index)
+            self._brightness = kwargs[ATTR_BRIGHTNESS]
         self._h.set_attribute('OnOff', 'True', self.index)
         self._h.d[self.index].OnOff = True
         self._state = True
@@ -69,7 +71,7 @@ class HiloDimmer(LightEntity):
     def update(self):
         #self._h.update()
 
-        self._brightness = self._h.d[self.index].Intensity/100*255
+        self._brightness = self._h.d[self.index].Intensity*255
 
         if(self._h.d[self.index].OnOff == 'True'):
             self._state = True
