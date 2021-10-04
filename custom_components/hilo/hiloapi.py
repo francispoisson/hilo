@@ -244,7 +244,7 @@ class Hilo():
     def update(self):
         self.refreshToken()
         suppAttrLowCase = {}
-        self.get_events()
+        #self.get_events()
 
         try:
             self.__location_id = self.get_location_id()

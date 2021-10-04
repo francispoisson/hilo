@@ -31,7 +31,7 @@ def setup(hass, config):
     hass.helpers.discovery.load_platform('climate', DOMAIN, {}, config)
     hass.helpers.discovery.load_platform('sensor', DOMAIN, {}, config)
     hass.helpers.discovery.load_platform('switch', DOMAIN, {}, config)
-    hass.helpers.discovery.load_platform('binary_sensor', DOMAIN, {}, config)
+    #hass.helpers.discovery.load_platform('binary_sensor', DOMAIN, {}, config)
     hass.helpers.discovery.load_platform('light', DOMAIN, {}, config)
 
     return True
