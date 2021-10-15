@@ -23,9 +23,7 @@ class PowerSensor(Entity):
         self.index = index
         #self.entity_id = ENTITY_ID_FORMAT.format(h.d[index].deviceId)
         self._name = h.d[index].name
-        
         self._h = h
-        
         self._should_poll = True
 
     @property
@@ -40,12 +38,10 @@ class PowerSensor(Entity):
     @property
     def state(self):
         """Return the state of the sensor."""
-        if self._h.d[self.index].Power is None:
+        if not self._h.d[self.index].Power:
             return '0'
         else:
-            power_int = int(self._h.d[self.index].Power)
-            round_power = round(power_int)
-            return str(round_power)
+            return str(int(self._h.d[self.index].Power))
     
     @property    
     def device_class(self):
@@ -59,11 +55,3 @@ class PowerSensor(Entity):
 
     def update(self):
         return
-        #self._h.update()
-        if self._h.d[self.index].Power is None:
-            self._state  = '0'
-        else:
-            power_int = int(self._h.d[self.index].Power)
-            round_power = round(power_int)
-            self._state  = str(round_power)
-        return self._state

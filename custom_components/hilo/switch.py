@@ -23,9 +23,7 @@ class HiloSwitch(ToggleEntity):
         #self.entity_id = ENTITY_ID_FORMAT.format('switch_' + str(h.d[index].deviceId))
         self._name = h.d[index].name
         self._state = None
-        
         self._h = h
-        
         self._should_poll = True
 
     @property
@@ -34,28 +32,23 @@ class HiloSwitch(ToggleEntity):
 
     @property
     def is_on(self):
-        return self._state
-        
+        return self._h.d[self.index].OnOff
  
+    @property
+    def available(self):
+        return not self._h.d[self.index].Disconnected
+
     @property
     def should_poll(self) -> bool:        
         return True
 
     def turn_on(self, **kwargs):
-        self._h.set_attribute('OnOff', 'True', self.index)
-        self._h.d[self.index].OnOff = True
-        self._state = True
+        _LOGGER.info(f"[{self.name}] Turning on")
+        self._h.set_attribute('OnOff', True, self.index)
     
     def turn_off(self, **kwargs):
-        self._h.set_attribute('OnOff', 'False', self.index)
-        self._h.d[self.index].OnOff = False
-        self._state = False
+        _LOGGER.info(f"[{self.name}] Turning off")
+        self._h.set_attribute('OnOff', False, self.index)
 
     def update(self):
-        #self._h.update()
-
-        if(self._h.d[self.index].OnOff == 'True'):
-            self._state = True
-        if(self._h.d[self.index].OnOff == 'False'):
-            self._state = False
-        return self._state
+        return
