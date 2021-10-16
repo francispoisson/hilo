@@ -25,11 +25,7 @@ class HiloEvent(BinarySensorEntity):
         self.index = index
         self._name = 'Défi Hilo'
         self._state = None
-        
         self._h = h
-        
-        #self._is_on = self._h.is_event
-        
         self._should_poll = True
 
     @property
@@ -53,12 +49,4 @@ class HiloEvent(BinarySensorEntity):
 
     def update(self):
         self._h.update()
-        #return
-        #_LOGGER.warning( "binary")
-        #if(self._h.is_event == True):
-            #_LOGGER.warning( "True")
-        #else:
-            #_LOGGER.warning( "False")
-
-        #self._state = self._h.is_event
         return self._state
