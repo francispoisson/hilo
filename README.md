@@ -28,4 +28,4 @@ hilo:
 ```
 # Thanks to:
 
-valleedelisle for the refactoring and boosting the quality of this repo.
+valleedelisle (https://github.com/valleedelisle/hilo) for the refactoring and boosting the quality of this repo.
