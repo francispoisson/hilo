@@ -26,3 +26,6 @@ hilo:
   username: YourHiloUsername
   password: YourHiloPassword
 ```
+# Thanks to:
+
+valleedelisle for the refactoring and boosting the quality of this repo.
