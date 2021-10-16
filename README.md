@@ -12,10 +12,10 @@ This is a custom component to allow control of Hilo devices from Home Assistant.
 - Get power of energy meter
 - Get power of each devices
 - Support for switches
-- Binary sensor for Hilo Event
 
 # To Do:
 - Add functionnalities for other devices
+- Binary sensor for Hilo Event
 
 # How To Setup:
 Copy the custom_components/hilo directory from the latest release to your customer_components directory.
