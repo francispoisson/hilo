@@ -1,70 +1,57 @@
-from homeassistant.components.light import (ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS, PLATFORM_SCHEMA, LightEntity)
-
-from datetime import timedelta
-
+from homeassistant.components.light import (
+    ATTR_BRIGHTNESS,
+    SUPPORT_BRIGHTNESS,
+    LightEntity,
+)
+from homeassistant.util import Throttle
 import logging
-
 _LOGGER = logging.getLogger(__name__)
+from .const import (
+    DOMAIN,
+    LIGHT_CLASSES
+)
+from .hilo_device import HiloBaseEntity
 
-from . import DOMAIN
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+    entities = []
+    light_classes = LIGHT_CLASSES
+    if hass.data[DOMAIN].light_as_switch:
+        light_classes.remove("LightSwitch")
+    for d in hass.data[DOMAIN].devices:
+        if d.device_type in light_classes:
+            d._entity = HiloDimmer(d, hass.data[DOMAIN].scan_interval)
+            entities.append(d._entity)
+    async_add_entities(entities)
 
-SCAN_IMTERVAL = timedelta(seconds=15)
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
-    for i, d in hass.data[DOMAIN].d.items():
-        if(d.deviceType in ['LightDimmer', 'WhiteBulb', 'ColorBulb']):
-            add_entities([HiloDimmer(hass.data[DOMAIN], i)])
-    return True
-
-class HiloDimmer(LightEntity):
-    def __init__(self, h, index):
-        self.index = index
-        #self.entity_id = ENTITY_ID_FORMAT.format('switch_' + str(h.d[index].deviceId))
-        self._name = h.d[index].name
-        self._state = h.d[index].OnOff
-        self._brightness = h.d[index].Intensity*255
-        self._h = h
-        self._should_poll = True
-        _LOGGER.debug(f"Setting up Dimmer entity: {self._name}")
-
-    @property
-    def name(self):
-        return self._h.d[self.index].name
-
-    @property
-    def is_on(self):
-        return self._h.d[self.index].OnOff
+class HiloDimmer(HiloBaseEntity, LightEntity):
+    def __init__(self, d, scan_interval):
+        super().__init__(d, scan_interval)
+        _LOGGER.debug(f"Setting up Light entity: {self._name} Scan: {scan_interval}")
 
     @property
     def brightness(self):
-        return self._h.d[self.index].Intensity*255
+        return self._get('Intensity', 0) * 255
 
     @property
-    def available(self):
-        return not self._h.d[self.index].Disconnected
-
-    @property
-    def should_poll(self) -> bool:        
-        return True
+    def state(self):
+        return "on" if self.is_on else "off"
 
     @property
     def supported_features(self):
         """Flag supported features."""
-        supports = SUPPORT_BRIGHTNESS
+        supports = 0
+        if "Intensity" in self.d.supported_attributes:
+            supports = SUPPORT_BRIGHTNESS
         return supports
 
-    def turn_on(self, **kwargs):
-        _LOGGER.info(f"[{self.name}] Tunring on")
-        self._h.set_attribute('OnOff', True, self.index)
+    async def async_turn_on(self, **kwargs):
+        _LOGGER.info(f"{self.d._tag} Tunring on")
+        await self.d.set_attribute("OnOff", True)
         if ATTR_BRIGHTNESS in kwargs:
-            _LOGGER.info(f"[{self._name}] Setting brightness to {kwargs[ATTR_BRIGHTNESS]}")
-            self._h.set_attribute('Intensity', kwargs[ATTR_BRIGHTNESS]/255, self.index)
-        return self.is_on
-    
-    def turn_off(self, **kwargs):
-        _LOGGER.info(f"[{self.name}] Turning off")
-        self._h.set_attribute('OnOff', False, self.index)
-        return self.is_on
-
-    def update(self):
-        return self.is_on
+            _LOGGER.info(
+                f"{self.d._tag} Setting brightness to {kwargs[ATTR_BRIGHTNESS]}"
+            )
+            await self.d.set_attribute(
+                "Intensity", kwargs[ATTR_BRIGHTNESS] / 255
+            )
