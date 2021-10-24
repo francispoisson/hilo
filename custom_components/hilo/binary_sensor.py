@@ -1,4 +1,5 @@
 from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT
 from homeassistant.util import Throttle
 import logging
 from .const import (
@@ -30,6 +31,10 @@ class HiloSensor(HiloBaseEntity, BinarySensorEntity):
     @property
     def device_class(self):
         return "power"
+
+    @property
+    def state_class(self):
+        return STATE_CLASS_MEASUREMENT
 
     async def _async_update(self):
         return

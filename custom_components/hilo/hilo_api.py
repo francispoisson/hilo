@@ -252,9 +252,9 @@ class Device:
 
     async def async_update_device(self):
         await self.get_device_attributes()
-        #_LOGGER.debug(
-        #    f"{self._tag} update_device attributes: {self.supported_attributes} "
-        #)
+        _LOGGER.debug(
+            f"{self._tag} update_device attributes: {self.supported_attributes} "
+        )
         for x in self.supported_attributes:
             value = self._raw_attributes.get(x.lower(), {}).get("value", None)
             #_LOGGER.debug(f"{self._tag} setting local attribute {x} to {value}")

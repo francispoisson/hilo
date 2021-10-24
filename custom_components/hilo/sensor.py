@@ -1,4 +1,5 @@
 from homeassistant.const import POWER_WATT
+from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT
 from homeassistant.helpers.entity import Entity
 from homeassistant.util import Throttle
 import logging
@@ -26,6 +27,10 @@ class PowerSensor(HiloBaseEntity, Entity):
     @property
     def state(self):
         return str(int(self._get('Power', 0)))
+
+    @property
+    def state_class(self):
+        return STATE_CLASS_MEASUREMENT
 
     @property
     def device_class(self):
