@@ -1,57 +1,44 @@
-"""Platform for sensor integration."""
 from homeassistant.const import POWER_WATT
+from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT
 from homeassistant.helpers.entity import Entity
+from homeassistant.util import Throttle
+import logging
+_LOGGER = logging.getLogger(__name__)
+from .const import DOMAIN
+from .hilo_device import HiloBaseEntity
 
-from homeassistant.components.sensor import (ENTITY_ID_FORMAT)
 
-from datetime import timedelta
 
-from . import DOMAIN
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+    entities = []
+    for d in hass.data[DOMAIN].devices:
+        if "Power" in d.supported_attributes:
+            d._entity = PowerSensor(d)
+            entities.append(d._entity)
+    async_add_entities(entities)
 
-SCAN_INTERVAL = timedelta(seconds=15)
-
-def setup_platform(hass, config, add_entities, discovery_info=None):
-    """Set up the sensor platform."""
-            
-    for i in range(len(hass.data[DOMAIN].d)):
-        add_entities([PowerSensor(hass.data[DOMAIN], i)])
-
-class PowerSensor(Entity):
-    """Representation of a sensor."""
-
-    def __init__(self, h, index):
-        self.index = index
-        #self.entity_id = ENTITY_ID_FORMAT.format(h.d[index].deviceId)
-        self._name = h.d[index].name
-        self._h = h
+class PowerSensor(HiloBaseEntity, Entity):
+    def __init__(self, d):
+        self._name = d.name
         self._should_poll = True
-
-    @property
-    def name(self):
-        """Return the precision of the system."""
-        return self._h.d[self.index].name
-
-    @property
-    def should_poll(self) -> bool:        
-        return True
+        self.d = d
+        _LOGGER.debug(f"Setting up PowerSensor entity: {self._name}")
 
     @property
     def state(self):
-        """Return the state of the sensor."""
-        if not self._h.d[self.index].Power:
-            return '0'
-        else:
-            return str(int(self._h.d[self.index].Power))
-    
-    @property    
+        return str(int(self._get('Power', 0)))
+
+    @property
+    def state_class(self):
+        return STATE_CLASS_MEASUREMENT
+
+    @property
     def device_class(self):
-        """Return the device class of the sensor."""
-        return 'power'
+        return "power"
 
     @property
     def unit_of_measurement(self):
-        """Return the unit of measurement."""
         return POWER_WATT
 
-    def update(self):
+    async def _async_update(self):
         return

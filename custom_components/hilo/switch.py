@@ -1,54 +1,36 @@
 from homeassistant.helpers.entity import ToggleEntity
-
-from homeassistant.components.sensor import (ENTITY_ID_FORMAT)
-
-from datetime import timedelta
-
+from homeassistant.components.switch import DEVICE_CLASSES as SWITCH_CLASSES
+from homeassistant.util import Throttle
 import logging
-
 _LOGGER = logging.getLogger(__name__)
+from .const import (
+    DOMAIN,
+    SWITCH_CLASSES
+)
+from .hilo_device import HiloBaseEntity
 
-from . import DOMAIN
 
-SCAN_IMTERVAL = timedelta(seconds=15)
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+    switch_classes = SWITCH_CLASSES
+    entities = []
+    if hass.data[DOMAIN].light_as_switch:
+        switch_classes.append("LightSwitch")
+    for d in hass.data[DOMAIN].devices:
+        if d.device_type in switch_classes:
+            d._entity = HiloSwitch(d, hass.data[DOMAIN].scan_interval)
+            entities.append(d._entity)
+    async_add_entities(entities)
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
-    for i in range(len(hass.data[DOMAIN].d)):
-        if(hass.data[DOMAIN].d[i].deviceType == 'LightSwitch'):
-            add_entities([HiloSwitch(hass.data[DOMAIN], i)])
+    return True
 
-class HiloSwitch(ToggleEntity):
-    def __init__(self, h, index):
-        self.index = index
-        #self.entity_id = ENTITY_ID_FORMAT.format('switch_' + str(h.d[index].deviceId))
-        self._name = h.d[index].name
-        self._state = None
-        self._h = h
-        self._should_poll = True
 
-    @property
-    def name(self):
-        return self._h.d[self.index].name
-
-    @property
-    def is_on(self):
-        return self._h.d[self.index].OnOff
- 
-    @property
-    def available(self):
-        return not self._h.d[self.index].Disconnected
+class HiloSwitch(HiloBaseEntity, ToggleEntity):
+    def __init__(self, d, scan_interval):
+        super().__init__(d, scan_interval)
+        _LOGGER.debug(f"Setting up Switch entity: {self._name} Scan: {scan_interval}")
 
     @property
-    def should_poll(self) -> bool:        
-        return True
+    def state(self):
+        return "on" if self.is_on else "off"
 
-    def turn_on(self, **kwargs):
-        _LOGGER.info(f"[{self.name}] Turning on")
-        self._h.set_attribute('OnOff', True, self.index)
-    
-    def turn_off(self, **kwargs):
-        _LOGGER.info(f"[{self.name}] Turning off")
-        self._h.set_attribute('OnOff', False, self.index)
 
-    def update(self):
-        return

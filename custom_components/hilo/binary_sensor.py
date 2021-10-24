@@ -1,52 +1,40 @@
-"""Platform for sensor integration."""
 from homeassistant.components.binary_sensor import BinarySensorEntity
-
+from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT
+from homeassistant.util import Throttle
 import logging
-
-from homeassistant.components.sensor import (ENTITY_ID_FORMAT)
-
-from datetime import timedelta
-
-from . import DOMAIN
+from .const import (
+    DOMAIN,
+    HILO_SENSOR_CLASSES
+)
+from .hilo_device import HiloBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
 
-SCAN_INTERVAL = timedelta(seconds=60)
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
-    """Set up the sensor platform."""
-            
-    add_entities([HiloEvent(hass.data[DOMAIN], 1)])
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+    entities = []
+    for d in hass.data[DOMAIN].devices:
+        if d.device_type in HILO_SENSOR_CLASSES:
+            d._entity = HiloSensor(d, hass.data[DOMAIN].scan_interval)
+            entities.append(d._entity)
+    async_add_entities(entities)
 
-class HiloEvent(BinarySensorEntity):
-    """Representation of a sensor."""
-
-    def __init__(self, h, index):
-        self.index = index
-        self._name = 'Défi Hilo'
-        self._state = None
-        self._h = h
-        self._should_poll = True
-
-    @property
-    def name(self):
-        """Return the precision of the system."""
-        return self._name
+class HiloSensor(HiloBaseEntity, BinarySensorEntity):
+    def __init__(self, d, scan_interval):
+        super().__init__(d, scan_interval)
+        if d.name == "SmartEnergyMeter":
+            self._name = "Défi Hilo"
+        else:
+            self._name = d.name
+        _LOGGER.debug(f"Setting up BinarySensor entity: {self._name} Scan: {scan_interval}")
 
     @property
-    def is_on(self):
-        """Return the state of the sensor."""
-        return self._state
-
-    @property
-    def should_poll(self) -> bool:        
-        return True
-    
-    @property    
     def device_class(self):
-        """Return the device class of the sensor."""
-        return None
+        return "power"
 
-    def update(self):
-        self._h.update()
-        return self._state
+    @property
+    def state_class(self):
+        return STATE_CLASS_MEASUREMENT
+
+    async def _async_update(self):
+        return

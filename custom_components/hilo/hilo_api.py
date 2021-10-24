@@ -6,6 +6,8 @@ import logging
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.util import Throttle
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.entity_component import async_update_entity
 import json
 from datetime import datetime, timedelta
 from time import time
@@ -13,7 +15,7 @@ import urllib
 
 from .const import (
     DEFAULT_SCAN_INTERVAL,
-    DEFAULT_LIGHT_AS_LIGHT,
+    DEFAULT_LIGHT_AS_SWITCH,
     DOMAIN
 )
 
@@ -29,10 +31,10 @@ class Hilo:
 
     _base_url = "https://apim.hiloenergie.com/Automation/v1/api"
     _subscription_key = "20eeaedcb86945afa3fe792cea89b8bf"
-    _access_token_expiration = None
+    _token_expiration = None
     _timeout = 30
     _verify = True
-    d = {}
+    devices = []
 
     def __init__(
         self,
@@ -40,15 +42,15 @@ class Hilo:
         password,
         hass,
         scan_interval=DEFAULT_SCAN_INTERVAL,
-        light_as_light=DEFAULT_LIGHT_AS_LIGHT
+        light_as_switch=DEFAULT_LIGHT_AS_SWITCH,
         ):
         self._username = username
         self._password = urllib.parse.quote(password, safe="")
         self._hass = hass
         self.scan_interval = scan_interval
-        self.light_as_light = light_as_light
+        self.light_as_switch = light_as_switch
         self.async_update = Throttle(self.scan_interval)(self._async_update)
-        self.refreshAccessToken = Throttle(timedelta(seconds=120))(self._refreshAccessToken)
+        self.refresh_token = Throttle(timedelta(seconds=120))(self._refresh_token)
 
     @property
     async def location_url(self):
@@ -80,7 +82,7 @@ class Hilo:
             #_LOGGER.debug(f"Response: {resp.status} {resp.text}")
             if resp.status == 401:
                 if "oauth2" not in url:
-                    await self.refreshAccessToken(True)
+                    await self.refresh_token(True)
                     return await try_again(f"{resp.url} Token is expired, trying again")
                 else:
                     _LOGGER.error(
@@ -106,7 +108,7 @@ class Hilo:
         return data
 
     async def _request(self, url, method="get", headers={}, data={}):
-        await self.refreshAccessToken()
+        await self.refresh_token()
         if not headers:
             headers = self.headers
         if method == "put":
@@ -118,7 +120,7 @@ class Hilo:
             raise
         return out
 
-    async def getAccessToken(self):
+    async def get_access_token(self):
         url = ("https://hilodirectoryb2c.b2clogin.com/"
                "hilodirectoryb2c.onmicrosoft.com/oauth2/"
                "v2.0/token?p=B2C_1A_B2C_1_PasswordFlow")
@@ -135,16 +137,17 @@ class Hilo:
         req = await self.async_call(url, method="post", headers=headers, data=body)
         return req.get("access_token", None)
 
-    async def _refreshAccessToken(self, force=False):
-        time_to_expire = time() - self._access_token_expiration
+    async def _refresh_token(self, force=False):
+        expiration = self._token_expiration if self._token_expiration else time() - 200
+        time_to_expire = time() - expiration
         _LOGGER.debug(
             f"Refreshing token, force: {force} Expiration: "
-            f"{datetime.fromtimestamp(self._access_token_expiration)} "
+            f"{datetime.fromtimestamp(expiration)} "
             f"Time to expire: {time_to_expire}"
         )
-        if force or not self._access_token or time() > self._access_token_expiration:
-            self._access_token_expiration = time() + 3000
-            self._access_token = await self.getAccessToken()
+        if force or not self._access_token or time() > expiration:
+            self._token_expiration = time() + 3000
+            self._access_token = await self.get_access_token()
             if not self._access_token:
                 return False
         return True
@@ -186,150 +189,76 @@ class Hilo:
             self.is_event = True
 
     async def get_devices(self):
-        url_get_device = f"{await self.location_url}/Devices"
-        req = await self._request(url_get_device)
-        _LOGGER.debug(f"get_devices: {req}")
-
-        for i, v in enumerate(req):
-            _LOGGER.debug(f"Device {i} {v}")
-            self.d[i] = Device(
-                v["name"],
-                v["identifier"],
-                v["type"],
-                v["supportedAttributes"],
-                v["settableAttributes"],
-                v["id"],
-                v["category"],
-            )
-
-    async def get_device_attributes(self, index):
-        d = self.d[index]
-        url = f"{await self.location_url}/Devices/{d.deviceId}/Attributes"
+        """ Get list of all devices """
+        url = f"{await self.location_url}/Devices"
         req = await self._request(url)
-        self.d[index].AttributeRaw = {k.lower(): v for k, v in req.items()}
-        #_LOGGER.debug(f"[Device {index} {d.name} ({d.deviceType})] get_device_attributes: {self.d[index].AttributeRaw}")
+        for i, v in enumerate(req):
+            device = next(
+                (x for x in self.devices if x.device_id == v['id']),
+                Device(self)
+            )
+            await device._set_hilo_attributes(**v)
+            if not device in self.devices:
+                self.devices.append(device)
+
 
     async def _async_update(self):
         # self.get_events()
+        _LOGGER.info(f"Pulling all devices")
         await self.get_devices()
-        _LOGGER.debug(f"updating all {len(self.d)} devices")
 
-    async def _async_update_all_devices(self):
-        for i, d in self.d.items():
-            await self.update_device(i)
 
-    async def async_update_device(self, index):
-        d = self.d[index]
-        await self.get_device_attributes(index)
-        suppAttr = d.supportedAttributes.split(", ")
-        # All devices like SmokeDetectors don't have the disconnected attribute
-        # but it can be fetched
-        if "Disconnected" not in suppAttr:
-            suppAttr.append("Disconnected")
-        if "None" in suppAttr:
-            suppAttr.remove("None")
-        _LOGGER.debug(
-            f"[Device {index} {d.name} ({d.deviceType})] update_device attributes: {suppAttr}"
-        )
-        for x in suppAttr:
-            value = d.AttributeRaw.get(x.lower(), {}).get("value", None)
-            #_LOGGER.debug(f"[Device {index} {d.name} ({d.deviceType})] setting local attribute {x} to {value}")
-            setattr(d, x, value)
+    async def async_update_all_devices(self):
+        _LOGGER.info(f"Updating attributes for all devices")
+        await self.get_devices()
+        for d in self.devices:
+            await d.async_update_device()
 
-    async def set_attribute(self, key, value, index):
-        d = self.d[index]
-        _LOGGER.debug(
-            f"[Device {index} {d.name} ({d.deviceType})] setting remote attribute {key} to {value}"
-        )
-        setattr(d, key, value)
-        url = f"{await self.location_url}/Devices/{d.deviceId}/Attributes"
-        await self._request(url, method="put", data=json.dumps({key: str(value)}))
 
 class Device:
-    __name = None
-    __identifier = None
-    __deviceType = None
-    __supportedAttributes = None
-    __settableAttributes = None
-    __deviceId = None
-    __category = None
-    OnOff = None
-    Intensity = 0
-    CurrentTemperature = None
-    TargetTemperature = None
-    Power = None
-    Status = None
-    Heating = None
-    BatteryPercent = None
-    BatteryStatus = None
-    ActiveAlarm = None
-    WaterLeakStatus = None
-    MotorTargetPosition = None
-    MotorPosition = None
-    AlertLowBatt = None
-    AlertWaterLeak = None
-    AlertLowTemp = None
-    MaxTempSetpoint = None
-    MinTempSetpoint = None
-    StateTemperatures = None
-    LoadConnected = None
-    Icon = None
-    Category = None
-    Disconnected = None
-    ColorMode = None
-    Hue = None
-    Saturation = None
-    LockKeypad = None
-    BackLight = None
-    LoadConnectedDB = None
-    Humidity = None
-    ColorTemperature = None
-    DrmsState = None
-    Noise = None
-    Pressure = None
-    Co2 = None
-    WifiStatus = None
-    GrapState = None
-    AttributeRaw = {}
+    def __init__(self, hass):
+        self._h = hass
+        self._entity = None
 
-    def __init__(
-        self,
-        name,
-        identifier,
-        deviceType,
-        supportedAttributes,
-        settableAttributes,
-        deviceId,
-        category,
-    ):
-        self.__name = name
-        self.__deviceType = deviceType
-        self.__supportedAttributes = supportedAttributes
-        self.__settableAttributes = settableAttributes
-        self.__deviceId = deviceId
-        self.__category = category
+    async def _set_hilo_attributes(self, **kw):
+        self.name = kw.get('name')
+        self.device_type = kw.get('type')
+        self.supported_attributes = kw.get('supportedAttributes').split(", ")
+        self.settable_attributes = kw.get('settableAttributes')
+        self.device_id = kw.get('id')
+        self.category = kw.get('category')
+        self._tag = f"[Device {self.name} ({self.device_type})]"
+        self._device_url = f"{await self._h.location_url}/Devices/{self.device_id}"
+        # All devices like SmokeDetectors don't have the disconnected attribute
+        # but it can be fetched
+        if "Disconnected" not in self.supported_attributes:
+            self.supported_attributes.append("Disconnected")
+        if "None" in self.supported_attributes:
+            self.supported_attributes.remove("None")
 
-    @property
-    def deviceId(self):
-        return self.__deviceId
+    async def get_device_attributes(self):
+        url = f"{self._device_url}/Attributes"
+        req = await self._h._request(url)
+        self._raw_attributes = {k.lower(): v for k, v in req.items()}
+        #_LOGGER.debug(f"[Device {index} {d.name} ({d.device_type})] get_device_attributes: {self.d[index].AttributeRaw}")
 
-    @property
-    def name(self):
-        return self.__name
+    async def set_attribute(self, key, value):
+        _LOGGER.debug(
+            f"{self._tag} setting remote attribute {key} to {value}"
+        )
+        setattr(self, key, value)
+        url = f"{self._device_url}/Attributes"
+        await self._h._request(url, method="put", data=json.dumps({key: str(value)}))
 
-    @property
-    def supportedAttributes(self):
-        return self.__supportedAttributes
+    async def async_update_device(self):
+        await self.get_device_attributes()
+        _LOGGER.debug(
+            f"{self._tag} update_device attributes: {self.supported_attributes} "
+        )
+        for x in self.supported_attributes:
+            value = self._raw_attributes.get(x.lower(), {}).get("value", None)
+            #_LOGGER.debug(f"{self._tag} setting local attribute {x} to {value}")
+            setattr(self, x, value)
 
-    @property
-    def settableAttributes(self):
-        return self.__settableAttributes
-
-    @property
-    def deviceType(self):
-        return self.__deviceType
-
-    @property
-    def category(self):
-        return self.__category
-
+    def __eq__(self, other):
+        return self.device_id == other.device_id
