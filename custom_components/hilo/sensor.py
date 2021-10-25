@@ -13,15 +13,13 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     entities = []
     for d in hass.data[DOMAIN].devices:
         if "Power" in d.supported_attributes:
-            d._entity = PowerSensor(d)
+            d._entity = PowerSensor(d, hass.data[DOMAIN].scan_interval)
             entities.append(d._entity)
     async_add_entities(entities)
 
 class PowerSensor(HiloBaseEntity, Entity):
-    def __init__(self, d):
-        self._name = d.name
-        self._should_poll = True
-        self.d = d
+    def __init__(self, d, scan_interval):
+        super().__init__(d, scan_interval)
         _LOGGER.debug(f"Setting up PowerSensor entity: {self._name}")
 
     @property
@@ -41,4 +39,10 @@ class PowerSensor(HiloBaseEntity, Entity):
         return POWER_WATT
 
     async def _async_update(self):
-        return
+        # Other devices are updated within their own
+        # classes. If we don't escape them, they will
+        # be double-polled
+        if self.d.device_type != "Meter":
+            return
+        _LOGGER.debug(f"{self.d._tag} Updating")
+        await self.d.async_update_device()

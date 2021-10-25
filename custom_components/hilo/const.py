@@ -9,6 +9,6 @@ DOMAIN = "hilo"
 # with the original code, the LightSwitch is dynamically added when
 # light_as_switch boolean is enabled in configuration.
 LIGHT_CLASSES = ["LightDimmer", "WhiteBulb", "ColorBulb", "LightSwitch"]
-HILO_SENSOR_CLASSES = ["Meter", "SmokeDetector"]
+HILO_SENSOR_CLASSES = ["SmokeDetector"]
 CLIMATE_CLASSES = ["Thermostat"]
 SWITCH_CLASSES = ["LightSwitch"]
