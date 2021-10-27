@@ -45,7 +45,7 @@ class Hilo:
         light_as_switch=DEFAULT_LIGHT_AS_SWITCH,
         ):
         self._username = username
-        self._password = urllib.parse.quote(password, safe="")
+        self._password = urllib.parse.quote(password, safe="!@#$%^&*()")
         self._hass = hass
         self.scan_interval = scan_interval
         self.light_as_switch = light_as_switch
