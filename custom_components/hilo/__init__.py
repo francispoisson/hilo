@@ -2,14 +2,24 @@
 import asyncio
 import logging
 
-from .hilo_api import Hilo
+from .api import Hilo
+
+# from .utility_meter import async_setup_platform, utility_setup
 from .const import (
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
-    LIGHT_AS_SWITCH,
+    CONF_LIGHT_AS_SWITCH,
+    CONF_GENERATE_ENERGY_METERS,
+    CONF_ENERGY_METER_PERIOD,
+    CONF_HQ_PLAN_NAME,
+    CONF_TARIFF_PLAN,
+    DEFAULT_TARIFF_PLAN,
+    DEFAULT_LIGHT_AS_SWITCH,
     MIN_SCAN_INTERVAL,
+    DEFAULT_GENERATE_ENERGY_METERS,
+    DEFAULT_ENERGY_METER_PERIOD,
+    DEFAULT_HQ_PLAN_NAME,
 )
-
 import voluptuous as vol
 
 
@@ -37,7 +47,19 @@ CONFIG_SCHEMA = vol.Schema(
             {
                 vol.Required(CONF_USERNAME): cv.string,
                 vol.Required(CONF_PASSWORD): cv.string,
-                vol.Optional(LIGHT_AS_SWITCH, default=False): cv.boolean,
+                vol.Optional(
+                    CONF_LIGHT_AS_SWITCH, default=DEFAULT_LIGHT_AS_SWITCH
+                ): cv.boolean,
+                vol.Optional(
+                    CONF_GENERATE_ENERGY_METERS, default=DEFAULT_GENERATE_ENERGY_METERS
+                ): cv.boolean,
+                vol.Optional(
+                    CONF_HQ_PLAN_NAME, default=DEFAULT_HQ_PLAN_NAME
+                ): cv.string,
+                vol.Optional(
+                    CONF_ENERGY_METER_PERIOD, default=DEFAULT_ENERGY_METER_PERIOD
+                ): cv.string,
+                vol.Optional(CONF_TARIFF_PLAN, default=DEFAULT_TARIFF_PLAN): cv.string,
                 vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): (
                     vol.All(cv.time_period, vol.Clamp(min=MIN_SCAN_INTERVAL))
                 ),
@@ -47,7 +69,7 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-PLATFORMS = ["climate", "sensor", "switch", "binary_sensor", "light"]
+PLATFORMS = ["sensor", "climate", "switch", "binary_sensor", "light"]
 COORDINATOR_AWARE_PLATFORMS = [SENSOR_DOMAIN, BINARY_SENSOR_DOMAIN]
 
 
@@ -64,7 +86,6 @@ async def async_setup(hass, config):
     hass.services.async_register(
         DOMAIN, SERVICE_RELOAD, reload_service_handler, schema=vol.Schema({})
     )
-
     return await _async_process_config(hass, config)
 
 
@@ -74,7 +95,7 @@ def get_scan_interval(conf):
 
 async def _async_process_config(hass, config) -> bool:
     if DOMAIN not in config:
-        return True
+        return False
     conf = config.get(DOMAIN)
 
     load_tasks = []
@@ -85,24 +106,31 @@ async def _async_process_config(hass, config) -> bool:
         password,
         hass,
         get_scan_interval(config),
-        conf.get(LIGHT_AS_SWITCH, False)
+        conf.get(CONF_LIGHT_AS_SWITCH, DEFAULT_LIGHT_AS_SWITCH),
+        conf.get(CONF_GENERATE_ENERGY_METERS, DEFAULT_GENERATE_ENERGY_METERS),
+        conf.get(CONF_ENERGY_METER_PERIOD, DEFAULT_ENERGY_METER_PERIOD),
+        conf.get(CONF_HQ_PLAN_NAME, DEFAULT_HQ_PLAN_NAME),
+        conf.get(CONF_TARIFF_PLAN, DEFAULT_TARIFF_PLAN),
     )
     await hilo.async_update_all_devices()
     coordinator = _hilo_coordinator(hass, hilo)
     hass.data[DOMAIN] = hilo
     await asyncio.gather(coordinator.async_refresh())
     if not coordinator.last_update_success:
-        _LOGGER.error(
-            "Hilo coordinator failed: " +
-            str(coordinator.last_exception)
-        )
+        _LOGGER.error("Hilo coordinator failed: " + str(coordinator.last_exception))
         return False
     for platform in PLATFORMS:
-        _LOGGER.debug(f"Loading {platform}")
-        load_tasks.append(
-            discovery.async_load_platform(hass, platform, DOMAIN, {}, config)
-        )
-    await asyncio.gather(*load_tasks)
+        try:
+            load_tasks.append(
+                discovery.async_load_platform(hass, platform, DOMAIN, {}, config)
+            )
+        except Exception as e:
+            _LOGGER.exception(e)
+
+    try:
+        await asyncio.gather(*load_tasks)
+    except Exception as err:
+        _LOGGER.exception(err)
     return True
 
 
