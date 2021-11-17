@@ -1,13 +1,13 @@
-from homeassistant.helpers.entity import ToggleEntity
 from homeassistant.util import Throttle
 import logging
+
 _LOGGER = logging.getLogger(__name__)
+
 
 class HiloBaseEntity:
     def __init__(self, d, scan_interval):
         self._name = d.name
         self.d = d
-        self._should_poll = True
         self.async_update = Throttle(scan_interval)(self._async_update)
 
     @property
@@ -16,11 +16,15 @@ class HiloBaseEntity:
 
     @property
     def is_on(self):
-        return self._get('OnOff')
+        return self._get("OnOff")
 
     @property
     def available(self):
-        return not self._get('Disconnected')
+        return not self._get("Disconnected")
+
+    @property
+    def last_update(self):
+        return self._get("last_update")
 
     @property
     def should_poll(self) -> bool:
