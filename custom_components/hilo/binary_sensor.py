@@ -1,7 +1,11 @@
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT
+from homeassistant.util import Throttle
 import logging
-from .const import DOMAIN, HILO_SENSOR_CLASSES
+from .const import (
+    DOMAIN,
+    HILO_SENSOR_CLASSES
+)
 from .hilo_device import HiloBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -15,26 +19,22 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             entities.append(d._entity)
     async_add_entities(entities)
 
-
 class HiloSensor(HiloBaseEntity, BinarySensorEntity):
     def __init__(self, d, scan_interval):
         super().__init__(d, scan_interval)
         if d.name == "SmartEnergyMeter":
-            self._name = "Defi Hilo"
+            self._name = "Défi Hilo"
         else:
             self._name = d.name
-        _LOGGER.debug(
-            f"Setting up BinarySensor entity: {self._name} Scan: {scan_interval}"
-        )
-        self._state = False
+        _LOGGER.debug(f"Setting up BinarySensor entity: {self._name} Scan: {scan_interval}")
 
     @property
-    def state(self):
-        return "on" if self._state else "off"
+    def device_class(self):
+        return "power"
+
+    @property
+    def state_class(self):
+        return STATE_CLASS_MEASUREMENT
 
     async def _async_update(self):
-        if self.d.name == "SmartEnergyMeter":
-            self._state = await self.d._h.get_events()
-        elif self.d.name == "hilo_gateway":
-            await self.d.async_update_device()
-            self._state = self.d.onlineStatus == "Online"
+        return

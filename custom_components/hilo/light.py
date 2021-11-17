@@ -3,12 +3,14 @@ from homeassistant.components.light import (
     SUPPORT_BRIGHTNESS,
     LightEntity,
 )
+from homeassistant.util import Throttle
 import logging
-
 _LOGGER = logging.getLogger(__name__)
-from .const import DOMAIN, LIGHT_CLASSES
+from .const import (
+    DOMAIN,
+    LIGHT_CLASSES
+)
 from .hilo_device import HiloBaseEntity
-
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     entities = []
@@ -29,7 +31,7 @@ class HiloDimmer(HiloBaseEntity, LightEntity):
 
     @property
     def brightness(self):
-        return self._get("Intensity", 0) * 255
+        return self._get('Intensity', 0) * 255
 
     @property
     def state(self):
@@ -50,4 +52,6 @@ class HiloDimmer(HiloBaseEntity, LightEntity):
             _LOGGER.info(
                 f"{self.d._tag} Setting brightness to {kwargs[ATTR_BRIGHTNESS]}"
             )
-            await self.d.set_attribute("Intensity", kwargs[ATTR_BRIGHTNESS] / 255)
+            await self.d.set_attribute(
+                "Intensity", kwargs[ATTR_BRIGHTNESS] / 255
+            )

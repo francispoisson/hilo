@@ -9,12 +9,14 @@ from homeassistant.const import (
     PRECISION_TENTHS,
     TEMP_CELSIUS,
 )
+from homeassistant.util import Throttle
 import logging
-
 _LOGGER = logging.getLogger(__name__)
-from .const import DOMAIN, CLIMATE_CLASSES
+from .const import (
+    DOMAIN,
+    CLIMATE_CLASSES
+)
 from .hilo_device import HiloBaseEntity
-
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     entities = []
@@ -46,19 +48,19 @@ class HiloClimate(HiloBaseEntity, ClimateEntity):
 
     @property
     def current_temperature(self):
-        return self._get("CurrentTemperature", 0)
+        return self._get('CurrentTemperature', 0)
 
     @property
     def target_temperature(self):
-        return self._get("TargetTemperature", 0)
+        return self._get('TargetTemperature', 0)
 
     @property
     def max_temp(self):
-        return self._get("MaxTempSetpoint", 0)
+        return self._get('MaxTempSetpoint', 0)
 
     @property
     def min_temp(self):
-        return self._get("MinTempSetpoint", 0)
+        return self._get('MinTempSetpoint', 0)
 
     def set_hvac_mode(self, hvac_mode):
         """Set operation mode."""
@@ -66,7 +68,7 @@ class HiloClimate(HiloBaseEntity, ClimateEntity):
 
     @property
     def hvac_mode(self):
-        if not self._get("Heating"):
+        if not self._get('Heating'):
             return HVAC_MODE_OFF
         else:
             return HVAC_MODE_HEAT
@@ -82,12 +84,11 @@ class HiloClimate(HiloBaseEntity, ClimateEntity):
 
     async def async_set_temperature(self, **kwargs):
         if ATTR_TEMPERATURE in kwargs:
-            _LOGGER.info(
-                f"{self.d._tag} Setting temperature to {kwargs[ATTR_TEMPERATURE]}"
+            _LOGGER.info(f"{self.d._tag} Setting temperature to {kwargs[ATTR_TEMPERATURE]}")
+            await self.d.set_attribute(
+                "TargetTemperature", kwargs[ATTR_TEMPERATURE]
             )
-            await self.d.set_attribute("TargetTemperature", kwargs[ATTR_TEMPERATURE])
-            await self._async_update()
-            if kwargs[ATTR_TEMPERATURE] < self._get("CurrentTemperature", 0):
+            if kwargs[ATTR_TEMPERATURE] < self._get('CurrentTemperature', 0):
                 self.d.Heating = 100
             else:
                 self.d.Heating = 0
