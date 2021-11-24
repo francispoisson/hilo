@@ -73,7 +73,7 @@ class Hilo:
         tariff_plan=DEFAULT_TARIFF_PLAN,
     ):
         self._username = username
-        self._password = urllib.parse.quote(password, safe="")
+        self._password = urllib.parse.quote(password, safe="!@#$%^&*()")
         self._hass = hass
         self.scan_interval = scan_interval
         self.light_as_switch = light_as_switch
