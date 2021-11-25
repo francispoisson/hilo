@@ -141,6 +141,7 @@ class Hilo:
             return await try_again(err)
         try:
             data = await resp.json()
+            #_LOGGER.debug(f"Raw response dict: {data}")
         except aiohttp.client_exceptions.ContentTypeError:
             _LOGGER.warning(f"{resp.url} returned {resp.status} non-json: {resp.text}")
             return resp.text
@@ -242,6 +243,8 @@ class Hilo:
         return gw
 
     async def get_events(self):
+        # TODO(dvd): Leveraging the phases
+        # [{'progress': 'inProgress', 'isParticipating': True, 'isConfigurable': False, 'id': 107, 'period': 'pm', 'phases': {'preheatStartDateUTC': '2021-11-25T20:00:00Z', 'preheatEndDateUTC': '2021-11-25T22:00:00Z', 'reductionStartDateUTC': '2021-11-25T22:00:00Z', 'reductionEndDateUTC': '2021-11-26T02:00:00Z', 'recoveryStartDateUTC': '2021-11-26T02:00:00Z', 'recoveryEndDateUTC': '2021-11-26T02:50:00Z'}}]
         url = f"{await self.location_url(True)}/Events?active=true"
         req = await self._request(url)
         _LOGGER.debug(f"Events: {req}")
@@ -249,16 +252,19 @@ class Hilo:
         to_zone = tz.tzlocal()
         now = datetime.now()
         current_event = False
-        for r in req:
-            start_time = datetime.strptime(r.get("startTimeUTC"), "%Y-%m-%dT%H:%M:%SZ")\
-                               .replace(tzinfo=from_zone)\
-                               .astimzone(to_zone)
-            end_time = datetime.strptime(r.get("endTimeUTC"), "%Y-%m-%dT%H:%M:%SZ")\
-                               .replace(tzinfo=from_zone)\
-                               .astimzone(to_zone)
-            if start_time <= now <= end_time:
-                _LOGGER.info(f"Hilo event currently active: {r}")
+        if len(req):
+            if req[0].get('progress', "NotInProgress") == "inProgress":
                 current_event = True
+        #for r in req:
+        #    start_time = datetime.strptime(r.get("reductionStartDateUTC"), "%Y-%m-%dT%H:%M:%SZ")\
+        #                       .replace(tzinfo=from_zone)\
+        #                       .astimzone(to_zone)
+        #    end_time = datetime.strptime(r.get("reductionEndDateUTC"), "%Y-%m-%dT%H:%M:%SZ")\
+        #                       .replace(tzinfo=from_zone)\
+        #                       .astimzone(to_zone)
+        #    if start_time <= now <= end_time:
+        #        _LOGGER.info(f"Hilo event currently active: {r}")
+        #        current_event = True
         return current_event
 
     def get_dev_or_new(self, v):
@@ -394,6 +400,7 @@ class Device:
         self.category = kw.get("category")
         self._tag = f"[Device {self.name} ({self.device_type})]"
         self._device_url = f"{await self._h.location_url()}/Devices/{self.device_id}"
+        self._raw_attributes = {}
         _LOGGER.debug(f"{self._tag} Setting attributes {kw}")
         # All devices like SmokeDetectors don't have the disconnected attribute
         # but it can be fetched
@@ -408,8 +415,14 @@ class Device:
         else:
             url = f"{self._device_url}/Attributes"
             req = await self._h._request(url)
-        self._raw_attributes = {k.lower(): v for k, v in req.items()}
-        _LOGGER.debug(f"{self._tag} get_device_attributes: {self._raw_attributes}")
+        if len(req.items()):
+            self._raw_attributes = {k.lower(): v for k, v in req.items()}
+            _LOGGER.debug(f"{self._tag} get_device_attributes (raw): {self._raw_attributes}")
+        else:
+            _LOGGER.debug(f"{self._tag} Empty data returned by hilo")
+            if len(self._raw_attributes) == 0:
+                _LOGGER.debug("Retrying to get attributes")
+                await self.get_device_attributes()
 
     async def set_attribute(self, key, value):
         if self.device_type == "Gateway":
