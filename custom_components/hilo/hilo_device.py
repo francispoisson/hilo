@@ -44,6 +44,9 @@ class HiloBaseEntity:
 
     def _get(self, att, default=None):
         try:
-            return getattr(self.d, att)
+            value = getattr(self.d, att)
         except AttributeError:
             return default
+        if not value:
+            value = default
+        return value
