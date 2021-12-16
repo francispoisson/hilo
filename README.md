@@ -1,4 +1,7 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
+# DEPRECATED
+As of december 16 2021, this hilo integrration is no longer supported since big changes were made on Hilo side. 
+A link will be put here when another integration is developped.
 
 # Hilo
 [Hilo](https://www.hydroquebec.com/hilo/en/) integration for Home Assistant
