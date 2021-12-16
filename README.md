@@ -92,7 +92,7 @@ Here's an example on how to add the energy data to Lovelace:
                 entity: binary_sensor.defi_hilo
                 icon: mdi:fire
               - type: entity
-                entity: sensor.smartenergymeter
+                entity: sensor.smartenergymeter_power
                 name: Hydro
                 icon: mdi:speedometer
               - type: entity
