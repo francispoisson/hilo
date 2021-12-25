@@ -26,6 +26,7 @@ this integration. Hilo might change their API any time and this might break this
 
 ### To Do:
 - Add functionnalities for other devices
+- unit and functional tests
 - [Adding type hints to the code](https://developers.home-assistant.io/docs/development_typing/)
 - Write a separate library for the hilo api mapping
 
@@ -71,6 +72,7 @@ hilo:
 ### Sample complete configuration
 
 ```
+utility_meter:
 hilo:
   username: !secret hilo_username
   password: !secret hilo_password
@@ -84,6 +86,35 @@ Energy meters are a new feature of this integration. We used to manually generat
 but they now have been fully integrated into the Hilo integration.
 
 All generated entities and sensors will be prefixed with `hilo_energy_` or `hilo_rate_`.
+
+### How to enable them
+
+* Add `generate_energy_meters` to your `hilo` configuration block in `configuration.yaml` and set it to `true` like in the
+  sample config above.
+
+* If you never configured any utility meter, you will need to add an empty `utility_meter` block in your `configuration.yaml`.
+  The reason why we do this is because there's no official API to integrate the meters.
+
+* Restart home assistant and wait 5 minutes until you see the `sensor.hilo_energy_total_low` entity gettin created and populated
+  with data:
+  * The `status` should be in `collecting`
+  * The `state` should be a number higher than 0.
+
+* Once the data is starting to get populated, restart home assistant again. Not sure why this is necessary but without that, the
+  energy dashboard doesn't show the collected sensors.
+
+* If you see the following error in your logs, just wait for 5 minutes and restart home assistant again. The integration should
+  heal itself:
+
+    ```
+    2021-11-29 22:03:46 ERROR (MainThread) [homeassistant] Error doing job: Task exception was never retrieved
+    Traceback (most recent call last):
+    [...]
+    ValueError: could not convert string to float: 'None'
+    ```
+
+* If you still see these errors, don't worry too much. This means that the meters don't have any data in them. These errors will
+  vanish when the meters will get some data. So turn on your thermostats, your lights and everything.
 
 ### Lovelace sample integration
 

@@ -46,6 +46,7 @@ class UtilityManager:
                 "net_consumption": False,
                 "utility_meter_sensors": [],
                 "offset": timedelta(0),
+                "delta_values": False,
             }
         )
 

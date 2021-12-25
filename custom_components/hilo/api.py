@@ -15,13 +15,15 @@ from homeassistant.components.utility_meter.const import (
     DOMAIN as UTIL_METER_DOMAIN,
     ATTR_TARIFF,
 )
+from homeassistant.components.recorder.const import DATA_INSTANCE
 from homeassistant.core import (
     Context,
     callback as ha_callback,
 )
-import json
 from datetime import datetime, timedelta
 from dateutil import tz
+import json
+import re
 from time import time
 import urllib
 
@@ -42,6 +44,7 @@ _LOGGER = logging.getLogger(__name__)
 # These attributes will log their value when device is updated when debug is enabled
 # Useful for debugging
 LOGGED_ATTRIBUTES = ['CurrentTemperature', 'TargetTemperature', 'Power', 'Heating']
+TARIF_TYPE_REX = re.compile(r'(sensor.hilo_energy_.*)_(low|medium|high)')
 
 
 class Hilo:
@@ -244,7 +247,21 @@ class Hilo:
 
     async def get_events(self):
         # TODO(dvd): Leveraging the phases
-        # [{'progress': 'inProgress', 'isParticipating': True, 'isConfigurable': False, 'id': 107, 'period': 'pm', 'phases': {'preheatStartDateUTC': '2021-11-25T20:00:00Z', 'preheatEndDateUTC': '2021-11-25T22:00:00Z', 'reductionStartDateUTC': '2021-11-25T22:00:00Z', 'reductionEndDateUTC': '2021-11-26T02:00:00Z', 'recoveryStartDateUTC': '2021-11-26T02:00:00Z', 'recoveryEndDateUTC': '2021-11-26T02:50:00Z'}}]
+        # [{
+        #     'progress': 'inProgress',
+        #     'isParticipating': True,
+        #     'isConfigurable': False,
+        #     'id': 107,
+        #     'period': 'pm',
+        #     'phases': {
+        #       'preheatStartDateUTC': '2021-11-25T20:00:00Z',
+        #       'preheatEndDateUTC': '2021-11-25T22:00:00Z',
+        #       'reductionStartDateUTC': '2021-11-25T22:00:00Z',
+        #       'reductionEndDateUTC': '2021-11-26T02:00:00Z',
+        #       'recoveryStartDateUTC': '2021-11-26T02:00:00Z',
+        #       'recoveryEndDateUTC': '2021-11-26T02:50:00Z'
+        #     }
+        # }]
         url = f"{await self.location_url(True)}/Events?active=true"
         req = await self._request(url)
         _LOGGER.debug(f"Events: {req}")
@@ -328,8 +345,12 @@ class Hilo:
         plan_name = self.hq_plan_name
         tarif_config = CONF_TARIFF.get(plan_name)
         current_cost = self._hass.states.get("sensor.hilo_rate_current")
-        if float(energy_used.state) >= tarif_config.get("low_threshold"):
-            tarif = "medium"
+        try:
+            if float(energy_used.state) >= tarif_config.get("low_threshold"):
+                tarif = "medium"
+        except ValueError:
+            _LOGGER.warning(f"Unable to restore a valid state of {base_sensor}: {energy_used.state}")
+            pass
         if tarif_config.get("high") > 0 and self.high_times:
             tarif = "high"
         target_cost = self._hass.states.get(f"sensor.hilo_rate_{tarif}")
@@ -341,15 +362,17 @@ class Hilo:
         _LOGGER.debug(
             f"check_tarif: Current plan: {plan_name} Target Tarif: {tarif} Energy used: {energy_used.state} Peak: {self.high_times}"
         )
+        utility_entities = {}
         for state in self._hass.states.async_all():
-            self.set_tarif(state.entity_id, state.state, tarif)
-            self.fix_utility_sensor(state.entity_id, state)
+            entity = state.entity_id
+            self.set_tarif(entity, state.state, tarif)
+            if not entity.startswith("sensor.hilo_energy") or entity.endswith("_cost"):
+                continue
+            self.fix_utility_sensor(entity, state)
 
     @ha_callback
     def fix_utility_sensor(self, entity, state):
         """not sure why this doesn't get created with a proper device_class"""
-        if not entity.startswith("sensor.hilo_energy") or entity.endswith("_cost"):
-            return
         current_state = state.as_dict()
         attrs = current_state.get("attributes", {})
         if not attrs.get("source"):

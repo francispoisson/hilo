@@ -39,7 +39,7 @@ CONF_TARIFF = {
         "low_threshold": 40,
         "low": 0.04336,
         "medium": 0.07456,
-        "high": 50.65,
+        "high": 0.5065,
         "access": 0.41168,
     },
 }
